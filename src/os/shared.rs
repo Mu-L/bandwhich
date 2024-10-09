@@ -80,11 +80,17 @@ fn get_interface(interface_name: &str) -> Option<NetworkInterface> {
         .find(|iface| iface.name == interface_name)
 }
 
-fn create_write_to_stdout() -> Box<dyn FnMut(String) + Send> {
+fn create_write_to_stdout() -> Box<dyn FnMut(&str) + Send> {
     let mut stdout = io::stdout();
     Box::new({
-        move |output: String| {
-            writeln!(stdout, "{}", output).unwrap();
+        move |output| match writeln!(stdout, "{}", output) {
+            Ok(_) => (),
+            Err(e) if e.kind() == ErrorKind::BrokenPipe => {
+                // A process that was listening to bandwhich stdout has exited
+                // We can't do much here, lets just exit as well
+                std::process::exit(0)
+            }
+            Err(e) => panic!("Failed to write to stdout: {e}"),
         }
     })
 }

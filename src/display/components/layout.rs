@@ -1,6 +1,6 @@
 use ratatui::{
     layout::{Constraint, Direction, Rect},
-    terminal::Frame,
+    Frame,
 };
 
 use crate::display::{HeaderDetails, HelpText, Table};
@@ -30,7 +30,7 @@ pub struct Layout<'a> {
     pub footer: HelpText,
 }
 
-impl<'a> Layout<'a> {
+impl Layout<'_> {
     fn progressive_split(&self, rect: Rect, splits: Vec<Direction>) -> Vec<Rect> {
         splits
             .into_iter()
@@ -99,12 +99,15 @@ impl<'a> Layout<'a> {
         }
     }
 
-    pub fn render(&self, frame: &mut Frame, rect: Rect, ui_offset: usize) {
+    pub fn render(&self, frame: &mut Frame, rect: Rect, table_cycle_offset: usize) {
         let (top, app, bottom) = top_app_and_bottom_split(rect);
         let layout_slots = self.build_layout(app);
         for i in 0..layout_slots.len() {
             if let Some(rect) = layout_slots.get(i) {
-                if let Some(child) = self.children.get((i + ui_offset) % self.children.len()) {
+                if let Some(child) = self
+                    .children
+                    .get((i + table_cycle_offset) % self.children.len())
+                {
                     child.render(frame, *rect);
                 }
             }
